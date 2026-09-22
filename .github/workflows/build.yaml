@@ -1,0 +1,48 @@
+name: build
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  PUBLIC_RELEASES_URL: ${{ secrets.RELEASES_URL }}
+  PUBLIC_LATEST_WINDOW_BUILD_URL: ${{ secrets.LATEST_WINDOW_BUILD_URL }}
+  PUBLIC_LATEST_LINUX_BUILD_URL: ${{ secrets.LATEST_LINUX_BUILD_URL }}
+  PUBLIC_LATEST_ANDROID_BUILD_URL: ${{ secrets.LATEST_ANDROID_BUILD_URL }}
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 26.9.0
+
+      - name: Build
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: page-html
+          path: build
+          if-no-files-found: error
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: page-html
